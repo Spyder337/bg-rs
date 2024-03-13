@@ -1,3 +1,5 @@
+use std::error::Error;
+
 pub mod generators;
 pub mod libtree;
 
@@ -20,10 +22,11 @@ pub enum ProjectBuilder {
 }
 
 pub trait Generator {
+    fn validate_input();
     fn create(
         &self,
         name: String,
         p_type: ProjectType,
         libs: Vec<String>
-    ) -> Result<()>;
+    ) -> Result<Box<dyn Error>>;
 }
