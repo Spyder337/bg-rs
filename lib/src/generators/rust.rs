@@ -112,7 +112,7 @@ impl Generator for RustGenerator {
         p_name: &str,
         libs: &Vec<String>,
     ) -> crate::GenResult<Box<dyn std::error::Error>> {
-        let src_path = &mut root.clone();
+        let src_path = &mut root.join("src");
         //  Get the rust crate type from the project type.
         let init_type = &get_type_str(p_type);
 
@@ -121,11 +121,14 @@ impl Generator for RustGenerator {
         if let Err(e) = res {
             return Err(e);
         }
+
         //  Try to add any library files.
-        res = handle_libs(src_path, libs);
+        let lib_path = src_path.join("lib");
+        res = handle_libs(lib_path.as_path(), libs);
         if let Err(e) = res {
             return Err(e);
         }
+
         Ok(())
     }
 }
