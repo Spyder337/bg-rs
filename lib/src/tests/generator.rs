@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::io::Empty;
 use crate::generators::RustGenerator;
 use crate::Generator;
 

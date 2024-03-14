@@ -2,8 +2,8 @@ use std::{
     collections::HashMap,
     env,
     error::Error,
-    fs, os,
-    path::{self, Path, PathBuf},
+    fs,
+    path::{PathBuf},
 };
 
 use clap::ValueEnum;
@@ -136,8 +136,8 @@ pub trait Generator {
             ProjectType::NestedBin | ProjectType::Nested => {
                 path.push(name);
                 fs::create_dir(&path)?;
-                let mut lib_dict = self.parse_lib_str(libs);
-                let subdir = path.clone();
+                let lib_dict = self.parse_lib_str(libs);
+                let _subdir = path.clone();
 
                 for (lib_root, lib_paths) in lib_dict {
                     self.create_project(
