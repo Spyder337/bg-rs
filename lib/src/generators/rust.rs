@@ -11,6 +11,8 @@ use crate::{GenResult, Generator, ProjectType};
 
 use super::RustGenerator;
 
+const V_TOML_TXT: &str = "[workspace]\nresolver=\"2\"\n";
+
 fn create_crate(name: &str, init_type: &str) -> GenResult<Box<dyn Error>> {
     let res = Command::new("cargo")
         .args(vec!["new", init_type, name])
@@ -106,13 +108,14 @@ fn get_type_str(p_type: ProjectType) -> String {
 impl Generator for RustGenerator {
     fn create_project(
         &self,
-        _is_root: bool,
+        is_root: bool,
         root: &mut std::path::PathBuf,
         p_type: crate::ProjectType,
         p_name: &str,
         libs: &Vec<String>,
     ) -> crate::GenResult<Box<dyn std::error::Error>> {
         let src_path = &mut root.clone();
+
         //  Get the rust crate type from the project type.
         let init_type = &get_type_str(p_type);
 
@@ -129,11 +132,30 @@ impl Generator for RustGenerator {
         if !(libs.is_empty() || lib_file_path.exists()) {
             fs::File::create(lib_file_path)?;
         }
-        res = handle_libs(src_path.as_path(), libs);
+        res = handle_libs(libs_path.as_path(), libs);
         if let Err(e) = res {
             return Err(e);
         }
 
+        Ok(())
+    }
+
+    fn create_root_folder<P>(&self, p: &P) -> GenResult<Box<dyn Error>>
+    where
+        P: AsRef<std::path::Path>,
+    {
+        let path: &Path = p.as_ref();
+        if path.exists() {
+            return Err("Directory already exists.".into());
+        }
+        fs::create_dir(path)?;
+        let binding = path.join("Cargo.toml");
+        let toml_path = binding.as_path();
+        if let Ok(mut f) = OpenOptions::new().write(true).create(true).open(toml_path) {
+            if let Err(e) = f.write(V_TOML_TXT.as_bytes()) {
+                return Err(Box::new(e));
+            }
+        }
         Ok(())
     }
 }

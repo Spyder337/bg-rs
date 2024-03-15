@@ -1,12 +1,7 @@
-use std::{
-    collections::HashMap,
-    env,
-    error::Error,
-    fs,
-    path::{PathBuf},
-};
+use std::{collections::HashMap, env, error::Error, fs, path::{Path, PathBuf}, process::Command};
 
 use clap::ValueEnum;
+use generators::RustGenerator;
 
 pub mod generators;
 mod tests;
@@ -38,10 +33,30 @@ pub fn get_file_ext(p_type: ProjectBuilder) -> String {
     }
 }
 
+pub fn copy_directory(src_path: &Path, dest_path: &Path) -> Result<(), Box<dyn Error>> {
+    let res = Command::new("cp")
+        .args(vec!["-r", src_path.to_str().unwrap(), dest_path.to_str().unwrap()])
+        .spawn();
+
+    if let Err(e) = res {
+        return Err("Failed to copy directory.".into());
+    }
+
+    Ok(())
+}
+
+pub fn get_generator<T>(p_type: ProjectBuilder) -> impl Generator {
+    match p_type {
+        ProjectBuilder::Build2 => todo!(),
+        ProjectBuilder::Python => todo!(),
+        ProjectBuilder::Rust => RustGenerator,
+    }
+}
+
 pub trait Generator {
     /**
-    * Validate input
-    * Summary:
+    ### Validate input
+    ### Summary:
        Validates that project types that require sub-projects have them.
     * @param p_type ProjectType
     * @param libs Vec<String>
@@ -55,21 +70,20 @@ pub trait Generator {
                 } else {
                     Ok(())
                 }
-            },
+            }
             ProjectType::Empty => {
                 if libs.is_empty() {
                     Ok(())
-                }
-                else{
+                } else {
                     return Err("Empty projects have no libraries attached.".into());
                 }
-            },
+            }
             _ => Ok(()),
         }
     }
 
     /**
-    # Summary:
+    ### Summary:
     Converts the array of lib paths into an ordered set of paths under a common root.
     */
     fn parse_lib_str(&self, libs: &Vec<String>) -> HashMap<String, Vec<String>> {
@@ -112,6 +126,8 @@ pub trait Generator {
         libs: &Vec<String>,
     ) -> GenResult<Box<dyn Error>>;
 
+    fn create_root_folder<P>(&self, path: &P) -> GenResult<Box<dyn Error>> where P: AsRef<std::path::Path> ;
+
     fn create(
         &self,
         p_type: ProjectType,
@@ -124,6 +140,7 @@ pub trait Generator {
             return Err(e);
         }
 
+        //  Store path for later commands.
         let mut path = env::current_dir()?;
 
         match p_type {
@@ -134,8 +151,16 @@ pub trait Generator {
                 self.create_project(true, &mut path, p_type, name.as_str(), &libs)?;
             }
             ProjectType::NestedBin | ProjectType::Nested => {
+                let root_path = path.clone();
                 path.push(name);
-                fs::create_dir(&path)?;
+
+                //  Try to create the root directory for the project
+                //  If it fails return the error.
+                if let Err(e) = self.create_root_folder(&path){
+                    return Err(e);
+                }
+                
+                env::set_current_dir(path.as_path())?;
                 let lib_dict = self.parse_lib_str(libs);
                 let _subdir = path.clone();
 
@@ -158,6 +183,8 @@ pub trait Generator {
                         &vec![],
                     )?;
                 }
+
+                env::set_current_dir(root_path.as_path())?;
             }
         }
 
