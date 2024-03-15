@@ -14,21 +14,24 @@ struct Cli {
     #[arg(required=true)]
     p_name: String,
     #[arg(required=false)]
-    libs: Vec<String>
+    libs: String
 }
 
 fn main() -> Result<(), Box<dyn Error>>{
     //  Note --help returns after this function.
     let cli = Cli::parse();
 
-    let gen: Box<dyn Generator>;
     match cli.build_system {
         ProjectBuilder::Build2 => todo!(),
         ProjectBuilder::Python => todo!(),
-        ProjectBuilder::Rust => gen = Box::new(RustGenerator),
+        ProjectBuilder::Rust => {
+            let gen = RustGenerator;
+            let libs: Vec<String> = cli.libs.split(' ').collect::<Vec<_>>().into_iter().map(|s| s.to_string()).collect();
+            gen.create(cli.build_type, &cli.p_name, &libs)?;
+        },
     }
+
     
-    gen.create(cli.build_type, &cli.p_name, &cli.libs)?;
 
     return Ok(());
 }
