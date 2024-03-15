@@ -75,7 +75,7 @@ fn handle_libs(src_path: &Path, libs: &Vec<String>) -> GenResult<Box<dyn Error>>
                 lib_rs_file = new_buff;
             }
             //  text to add to the lib/mod.rs file
-            let file_str = format!("mod {};", lib_name);
+            let file_str = format!("mod {};\n", lib_name);
 
             // Try to write the file_str to the lib/mod.rs file.
             if let Ok(mut f) = OpenOptions::new()
@@ -108,7 +108,7 @@ fn get_type_str(p_type: ProjectType) -> String {
 impl Generator for RustGenerator {
     fn create_project(
         &self,
-        is_root: bool,
+        _is_root: bool,
         root: &mut std::path::PathBuf,
         p_type: crate::ProjectType,
         p_name: &str,

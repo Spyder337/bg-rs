@@ -1,4 +1,4 @@
-use std::{collections::HashMap, env, error::Error, fs, path::{Path, PathBuf}, process::Command};
+use std::{collections::HashMap, env, error::Error, path::{Path, PathBuf}, process::Command};
 
 use clap::ValueEnum;
 use generators::RustGenerator;
@@ -38,7 +38,7 @@ pub fn copy_directory(src_path: &Path, dest_path: &Path) -> Result<(), Box<dyn E
         .args(vec!["-r", src_path.to_str().unwrap(), dest_path.to_str().unwrap()])
         .spawn();
 
-    if let Err(e) = res {
+    if let Err(_e) = res {
         return Err("Failed to copy directory.".into());
     }
 
